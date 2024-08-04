@@ -40,7 +40,12 @@ defmodule ElixirRpgWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: ElixirRpgWeb.Telemetry
+      live_dashboard "/dashboard",
+        metrics: ElixirRpgWeb.Telemetry,
+        additional_pages: [
+          route_name: ElixirRpgWeb.ConfigPage
+        ]
+
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
