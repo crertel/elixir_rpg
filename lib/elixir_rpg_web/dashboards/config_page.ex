@@ -10,7 +10,7 @@ defmodule ElixirRpgWeb.ConfigPage do
   end
 
   @impl true
-  def mount(params, sessions, socket) do
+  def mount(_params, _sessions, socket) do
     applications = :application.which_applications() |> Enum.map(&(&1 |> elem(0)))
 
     config_vars =
@@ -61,8 +61,8 @@ defmodule ElixirRpgWeb.ConfigPage do
   #      <%= inspect(@current_values, pretty: true) %>
   #    </.CoreComponents.modal>
 
-  defp fetch_config(params, node) do
-    %{search: search, sort_by: sort_by, sort_dir: sort_dir, limit: limit} = params
+  defp fetch_config(params, _node) do
+    %{search: _search, sort_by: _sort_by, sort_dir: _sort_dir, limit: _limit} = params
 
     config_vars = Process.get(:the_known_config)
     {config_vars, length(config_vars)}
@@ -76,8 +76,9 @@ defmodule ElixirRpgWeb.ConfigPage do
     ]
   end
 
+  @impl true
   def handle_event("show_info", %{"info" => id}, socket) do
-    cfg = Process.get(:the_known_config)
+    _cfg = Process.get(:the_known_config)
     {:noreply, socket |> assign(current_values: id)}
   end
 end
