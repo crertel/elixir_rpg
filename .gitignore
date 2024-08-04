@@ -35,3 +35,5 @@ elixir_rpg-*.tar
 npm-debug.log
 /assets/node_modules/
 
+.nix-hex/
+.nix-mix/
