@@ -10,7 +10,7 @@ defmodule ElixirRpgWeb.UserRegistrationLive do
       <.header class="text-center">
         Register for an account
         <:subtitle>
-          Already registered?
+          Already have an acconut?
           <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
             Log in
           </.link>
