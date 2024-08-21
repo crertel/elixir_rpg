@@ -67,7 +67,7 @@ defmodule ElixirRpgWeb.UserLoginLiveTest do
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 
-      assert login_html =~ "Register"
+      assert login_html =~ "Create an account"
     end
 
     test "redirects to forgot password page when the Forgot Password button is clicked", %{
