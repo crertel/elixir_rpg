@@ -9,6 +9,8 @@ defmodule ElixirRpg.Repo.Migrations.CreateUsersAuthTables do
       add :email, :citext, null: false
       add :hashed_password, :string, null: false
       add :confirmed_at, :utc_datetime_usec
+      add :faction, :string, null: false
+      add :display_name, :string, null: false
 
       timestamps(type: :utc_datetime_usec)
     end
