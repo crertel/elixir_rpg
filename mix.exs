@@ -58,7 +58,8 @@ defmodule ElixirRpg.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.4.4"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.5.7"}
+      {:bandit, "~> 1.5.7"},
+      {:graphmath, "~> 2.6.0"}
     ]
   end
 
