@@ -66,8 +66,8 @@ config :elixir_rpg, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, backends: [:console, ElixirRpg.PubSubLoggerBackend]
-config :logger, :console, format: "[$level] $message\n"
-config :logger, ElixirRpg.PubSubLoggerBackend, level: :debug
+config :logger, :console, format: "[$level] $message\n", level: :info
+config :logger, ElixirRpg.PubSubLoggerBackend, level: :info, exchange: ElixirRpg.PubSub
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
