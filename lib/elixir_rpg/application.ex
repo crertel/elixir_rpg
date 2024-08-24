@@ -14,15 +14,14 @@ defmodule ElixirRpg.Application do
       {Phoenix.PubSub, name: ElixirRpg.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: ElixirRpg.Finch},
-      # Start a worker by calling: ElixirRpg.Worker.start_link(arg)
-      # {ElixirRpg.Worker, arg},
-      # Start to serve requests, typically the last entry
+      {ElixirRpg.World, name: World},
       ElixirRpgWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: ElixirRpg.Supervisor]
+
     Supervisor.start_link(children, opts)
   end
 
