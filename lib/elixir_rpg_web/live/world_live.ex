@@ -1,72 +1,118 @@
 defmodule ElixirRpgWeb.WorldLive.Index do
   use ElixirRpgWeb, :live_view
 
+  alias ElixirRpg.World
 
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
+      # subscribe to logging
       Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "util:log:messages")
-    end
 
-    {:ok,
-     socket
-     |> assign(:mouse_position, [0, 0, 0, 0])
-     |> assign(:mouse_state, :up)
-     |> assign(:entities, [])
-     |> assign(:vb_x_min, 0)
-     |> assign(:vb_y_min, 0)
-     |> assign(:vb_width, 960)
-     |> assign(:vb_height, 500)
-     |> assign(:zoom_level, 1.0)
-     |> stream( :log_messages, [])
-    }
+      # figure out what cell we're supposed to be in
+      Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "user:#{socket.assigns.current_user.id}:*")
+      # user_entity = World.get_entity_for_account(socket.assigns.current_user)
+      # user_cell = World.get_cell_for_user(socket)
+
+      {:ok,
+       socket
+       |> assign(:mouse_position, [0, 0, 0, 0])
+       |> assign(:mouse_state, :up)
+       |> assign(:entities, [])
+       |> assign(:vb_x_min, 0)
+       |> assign(:vb_y_min, 0)
+       |> assign(:vb_width, 960)
+       |> assign(:vb_height, 500)
+       |> assign(:zoom_level, 1.0)
+       |> assign(:show_logs, false)
+       |> stream(:chat_messages, [])
+       |> stream(:log_messages, [])}
+    else
+      {:ok,
+       socket
+       |> assign(:mouse_position, [0, 0, 0, 0])
+       |> assign(:mouse_state, :up)
+       |> assign(:entities, [])
+       |> assign(:vb_x_min, 0)
+       |> assign(:vb_y_min, 0)
+       |> assign(:vb_width, 960)
+       |> assign(:vb_height, 500)
+       |> assign(:zoom_level, 1.0)
+       |> assign(:show_logs, false)
+       |> stream(:chat_messages, [])
+       |> stream(:log_messages, [])}
+    end
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <h1> Map </h1>
+    <h1>Map</h1>
     <ul>
-      <li> viewBox="<%= @vb_x_min %> <%= @vb_y_min %> <%= @vb_width%> <%= @vb_height%>" </li>
-      <li> mouse="<%= inspect @mouse_position %>" </li>
-      <li> zoomlevel="<%= inspect @zoom_level %>"</li>
+      <li>viewBox="<%= @vb_x_min %> <%= @vb_y_min %> <%= @vb_width %> <%= @vb_height %>"</li>
+      <li>mouse="<%= inspect(@mouse_position) %>"</li>
+      <li>zoomlevel="<%= inspect(@zoom_level) %>"</li>
     </ul>
 
     <.live_component
-    module={ElixirRpgWeb.LogOverlayComponent}
-    id="log-overlay"
-    streams={@streams}
+      module={ElixirRpgWeb.LogOverlayComponent}
+      id="log-overlay"
+      streams={@streams}
+      show={@show_logs}
     />
 
-    <div phx-hook="MouseHandler"
-         id="svg_canvas"
-         style="width:960px; height:500px; padding: 0px; margin: 0px;">
-      <svg x="0"
-           y="0"
-           width="960px"
-           height="500px"
-           viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
-           style="border: 1px solid black; pointer-events: none; margin: 0px;">
+    <div
+      phx-hook="MouseHandler"
+      id="svg_canvas"
+      style="width:960px; height:500px; padding: 0px; margin: 0px;"
+    >
+      <svg
+        x="0"
+        y="0"
+        width="960px"
+        height="500px"
+        viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
+        style="border: 1px solid black; pointer-events: none; margin: 0px;"
+      >
         <defs>
           <%= for obj <- @entities do %>
             <%= raw(obj.svg_markup) %>
           <% end %>
-          <pattern id="smallGrid" width="8" height="8" patternUnits="userSpaceOnUse" preserveAspectRatio="xMidYMid slice">
-            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="gray" stroke-width="0.5"/>
+          <pattern
+            id="smallGrid"
+            width="8"
+            height="8"
+            patternUnits="userSpaceOnUse"
+            preserveAspectRatio="xMidYMid slice"
+          >
+            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="gray" stroke-width="0.5" />
           </pattern>
-          <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse" preserveAspectRatio="xMidYMid slice">
-            <rect width="80" height="80" fill="url(#smallGrid)"/>
-            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="gray" stroke-width="1"/>
+          <pattern
+            id="grid"
+            width="80"
+            height="80"
+            patternUnits="userSpaceOnUse"
+            preserveAspectRatio="xMidYMid slice"
+          >
+            <rect width="80" height="80" fill="url(#smallGrid)" />
+            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="gray" stroke-width="1" />
           </pattern>
         </defs>
 
-        <use xlink:href="#a" transform="rotate(0 150 150) translate(150 150)"/>
-        <use xlink:href="#a" transform="rotate(0 150 150) translate(150 150)"/>
-        <rect x="-1000" y = "-1000" width="2000px" height="2000px" preserveAspectRatio="xMidYMid slice" fill="url(#grid)" />
+        <rect
+          x="-1000"
+          y="-1000"
+          width="2000px"
+          height="2000px"
+          preserveAspectRatio="xMidYMid slice"
+          fill="url(#grid)"
+        />
       </svg>
     </div>
     """
   end
+
+  # <use xlink:href="#a" transform="rotate(0 150 150) translate(150 150)" />
 
   @impl true
   def handle_event("mouse_enter", _, socket) do
@@ -86,8 +132,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
     s =
       case mouse_state do
         :drag ->
-          socket
-          |> assign(:mouse_state, :up)
+          assign(socket, :mouse_state, :up)
 
         :down ->
           assign(socket, :mouse_state, :up)
@@ -227,9 +272,18 @@ defmodule ElixirRpgWeb.WorldLive.Index do
     {:noreply, socket}
   end
 
-  #@max_log_buffer_size 64
   @impl true
-  def handle_info({:log, message, timestamp}, socket) do
-    {:noreply, stream_insert(socket, :log_messages, %{id: System.unique_integer(), message: message}, limit: -32)}
+  def handle_info({Logger, level, message}, socket) do
+    {:noreply,
+     stream_insert(
+       socket,
+       :log_messages,
+       %{
+         id: System.unique_integer(),
+         level: level,
+         message: "#{message}"
+       },
+       limit: -32
+     )}
   end
 end
