@@ -2,17 +2,19 @@ defmodule ElixirRpgWeb.WorldLive.Index do
   use ElixirRpgWeb, :live_view
   alias ElixirRpg.RenderPool
 
-  # alias ElixirRpg.World
+  alias ElixirRpg.World
 
   @impl true
   def mount(_params, _session, socket) do
+    cell_id = World.get_cell_id_for_name("house A")
+
     socket =
       socket
+      |> refresh_cell(cell_id)
       |> reset_mouse()
       |> reset_viewport()
       |> assign(:entities, [])
       |> assign(:show_logs, false)
-      |> assign(:cell_markup, nil)
       |> stream(:chat_messages, [])
       |> stream(:log_messages, [])
 
@@ -82,8 +84,15 @@ defmodule ElixirRpgWeb.WorldLive.Index do
           viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
           style="border: 1px solid black; pointer-events: none; margin: 0px;"
         >
-          <%= raw(@cell_markup) %>
+          <g transform="scale(1,-1)">
+            <%= raw(@svg_markup) %>
+            <line x1="0" y1="0" x2="10" y2="0" stroke-width="1" stroke="#0F0" />
+            <line x1="0" y1="0" x2="0" y2="10" stroke-width="1" stroke="#F00" />
+          </g>
         </svg>
+        <pre>
+        <%= @svg_markup %>
+        </pre>
       </div>
     </div>
     """
@@ -267,10 +276,17 @@ defmodule ElixirRpgWeb.WorldLive.Index do
   end
 
   def handle_info({:cell_render_available, cell_id}, socket) do
-    [{_cid, wall_markup, flats_markup, ents_markup, portals_markup}] =
-      :ets.lookup(RenderPool.get_table(), cell_id)
+    {:noreply, refresh_cell(socket, cell_id)}
+  end
 
-    IO.inspect(wall_markup)
-    {:noreply, assign(socket, svg_markup: wall_markup)}
+  def refresh_cell(socket, cell_id) do
+    case :ets.lookup(RenderPool.get_table(), cell_id) do
+      [{_cid, wall_markup, flats_markup, ents_markup, portals_markup}] ->
+        IO.inspect(wall_markup)
+        assign(socket, svg_markup: wall_markup)
+
+      _ ->
+        socket
+    end
   end
 end
