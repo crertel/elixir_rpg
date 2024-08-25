@@ -7,25 +7,27 @@ defmodule ElixirRpg.World do
   1. Boot process.
   2. Load cells
   """
+  require ElixirRpg.RenderPool
   alias ElixirRpg.Accounts.User
   alias ElixirRpg.Entity
   require ElixirRpg.Entity
-  # alias ElixirRpg.Cell
 
   use GenServer
   require Record
   require Logger
   alias ElixirRpg.EntitiesPool
+  alias ElixirRpg.RenderPool
 
   alias ElixirRpg.Cell
   require ElixirRpg.Cell
 
-  @tick_rate 100
+  @tick_rate 1000
 
   Record.defrecord(:world,
     next_tick: nil,
     frame_end: nil,
     cells: nil
+    # todo: user <-> entity mappings
   )
 
   @spec start_link([{atom(), any()}]) :: {:error, any()} | {:ok, pid}
@@ -40,6 +42,7 @@ defmodule ElixirRpg.World do
   @impl true
   def init(nil) do
     EntitiesPool.init()
+    RenderPool.init()
     Logger.info("World starting")
 
     # load up our cells
@@ -48,20 +51,97 @@ defmodule ElixirRpg.World do
     cell_table = :ets.new(:world_cells, [:protected])
 
     [
-      {
-        # overworld cell
+      %{
+        name: "overworld",
+        bounds: [-100, -100, 1100, 1100],
+        walls: [
+          # W wall
+          {{0, 0}, {0, 1000}, 5, "/textures/pallisade_wall.png", 128, 128},
+          # N wall
+          {{0, 0}, {1000, 0}, 5, "/textures/pallisade_wall.png", 128, 128},
+          # E wall
+          {{1000, 0}, {1000, 1000}, 5, "/textures/pallisade_wall.png", 128, 128},
+          # S wall
+          {{0, 1000}, {1000, 1000}, 5, "/textures/pallisade_wall.png", 128, 128}
+        ],
+        entities: [],
+        flats: [
+          # main plane
+          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/grass.png", 128, 128},
+          # N/S throughfare
+          {[{500, 0}, {500, 1000}, {550, 1000}, {550, 0}], "/textures/sand.png", 128, 128}
+        ],
+        portals: []
       },
-      {
-        # house A
+      %{
+        name: "house A",
+        bounds: [-10, -10, 510, 510],
+        walls: [
+          # W wall
+          {{0, 0}, {0, 500}, 5, "/textures/house1/wall.png", 128, 128},
+          # N wall
+          {{0, 0}, {500, 0}, 5, "/textures/house1/wall.png", 128, 128},
+          # E wall
+          {{500, 0}, {500, 500}, 5, "/textures/house1/wall.png", 128, 128},
+          # S wall
+          {{0, 500}, {500, 500}, 5, "/textures/house1/wall.png", 128, 128}
+        ],
+        entities: [],
+        flats: [
+          # floor
+          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house1/wood_floor.png", 128,
+           128}
+        ],
+        portals: []
       },
-      {
-        # house B
+      %{
+        name: "house B",
+        bounds: [-10, -10, 510, 510],
+        walls: [
+          # W wall
+          {{0, 0}, {0, 500}, 5, "/textures/house2/wall.png", 128, 128},
+          # N wall
+          {{0, 0}, {500, 0}, 5, "/textures/house2/wall.png", 128, 128},
+          # E wall
+          {{500, 0}, {500, 500}, 5, "/textures/house2/wall.png", 128, 128},
+          # S wall
+          {{0, 500}, {500, 500}, 5, "/textures/house2/wall.png", 128, 128}
+        ],
+        entities: [],
+        flats: [
+          # floor
+          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house2/wood_floor.png", 128,
+           128}
+        ],
+        portals: []
       }
     ]
-    |> Enum.map(fn {} ->
-      cell = Cell.new()
-      cell_id = Cell.cell(cell, :id)
+    |> Enum.map(fn %{
+                     name: name,
+                     bounds: bounds,
+                     walls: walls,
+                     entities: _ents,
+                     flats: flats,
+                     portals: _portals
+                   } ->
+      Cell.cell(id: cell_id) = cell = Cell.new(name, bounds)
+
+      Enum.map(walls, fn {wall_start, wall_end, thickness, texture, ix, iy} ->
+        Cell.add_wall(cell, wall_start, wall_end, thickness, texture, ix, iy)
+      end)
+
+      Enum.map(flats, fn {verts, texture, ix, iy} ->
+        Cell.add_flat(cell, verts, texture, ix, iy)
+      end)
+
+      # Enum.map(ents, fn ent -> Cell.add_entity(cell) end)
+
+      # Enum.map(portals, fn portal -> Cell.add_portal(cell) end)
+
+      :ets.insert(RenderPool.get_table(), {cell_id, nil, nil, nil, nil})
+
       :ets.insert(cell_table, {cell_id, cell})
+
       Logger.debug("Loaded cell #{cell_id}")
     end)
 
@@ -83,11 +163,34 @@ defmodule ElixirRpg.World do
 
     # update cells
     :ets.foldl(
-      fn {cid, cell}, acc ->
-        Cell.update(cell, dt)
-        acc
+      fn {_cid, cell}, _acc ->
+        # update
+        {cell2, _outbound_messages} = Cell.update(cell, dt)
+        :ets.update_element(cells_table, 2, cell2)
+
+        # "render" if anything interesting changed
+        Cell.cell(
+          walls_need_drawing: wnd,
+          flats_need_drawing: fnd,
+          portals_need_drawing: pnd,
+          entities_need_drawing: entend,
+          id: cell2_id
+        ) = cell2
+
+        if wnd or fnd or pnd or entend do
+          Cell.render(cell2)
+          IO.inspect(Cell.cell_topic(cell2))
+
+          Phoenix.PubSub.broadcast(
+            ElixirRpg.PubSub,
+            Cell.cell_topic(cell2),
+            {:cell_render_available, cell2_id}
+          )
+        end
+
+        :ok
       end,
-      [],
+      :ok,
       cells_table
     )
 
