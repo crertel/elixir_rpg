@@ -9,8 +9,10 @@
 
       pkgs = import nixpkgs { inherit system; };
       beamPkgs = with pkgs.beam_minimal; packagesWith interpreters.erlang_27;
-      erlang = beamPkgs.erlang;
-      elixir = beamPkgs.elixir_1_17;
+      extraErlangDeps = with pkgs; [wxGTK32 libpng libGLU libGL ];
+
+      erlang = beamPkgs.erlang.overrideAttrs (final: prev: { buildInputs = prev.buildInputs ++ extraErlangDeps; } );
+      elixir = beamPkgs.elixir_1_17.override{inherit erlang; };
     in
     {
       devShells."${system}".default = pkgs.mkShell {
