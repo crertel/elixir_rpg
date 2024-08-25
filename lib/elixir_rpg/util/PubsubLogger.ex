@@ -71,11 +71,15 @@ defmodule ElixirRpg.PubSubLoggerBackend do
     if meet_level?(level, log_level) do
       formatted_msg = Logger.Formatter.format(format, level, msg, ts, take_metadata(md, keys))
 
-      Phoenix.PubSub.broadcast(
-        exchange,
-        topic,
-        {Logger, level, formatted_msg}
-      )
+      try do
+        Phoenix.PubSub.broadcast(
+          exchange,
+          topic,
+          {Logger, level, formatted_msg}
+        )
+      rescue
+        _ -> :ok
+      end
     end
 
     {:ok, state}
