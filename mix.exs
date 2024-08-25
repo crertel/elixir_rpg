@@ -19,7 +19,7 @@ defmodule ElixirRpg.MixProject do
   def application do
     [
       mod: {ElixirRpg.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :observer]
     ]
   end
 
