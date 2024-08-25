@@ -4,6 +4,8 @@ defmodule ElixirRpg.Cell do
   require Logger
   require Record
 
+  alias Graphmath.Vec2, as: V
+
   require ElixirRpg.Entity
 
   Record.defrecord(:cell,
@@ -87,20 +89,41 @@ defmodule ElixirRpg.Cell do
     {wall_defs_markup, wall_geo_markup} =
       if wnd do
         :ets.foldl(
-          fn {_, {{startX, startY}, {endX, endY}, thickness, texture, ix, iy}}, {defs, geos} ->
+          fn {_, {{_startX, _startY} = s, {_endX, _endY} = e, thickness, texture, ix, iy}},
+             {defs, geos} ->
             stroke_def = """
-            <pattern id="texture-#{texture}" patternUnits="userSpaceOnUse" width="#{ix}" height="#{iy}">
-              <image xlink:href="#{texture}" width="#{ix}" height="#{ix}" />
+            <pattern id="texture-#{texture}" patternUnits="userSpaceOnUse" width="#{ix}" height="#{iy}"  patternTransform="scale(0.0078125 0.0078125)">
+              <image xlink:href="#{texture}" width="#{ix}" height="#{iy}" />
             </pattern>
+            """
+
+            line_dir = V.subtract(e, s) |> V.normalize()
+            cross = V.perp(line_dir) |> V.scale(0.5 * thickness)
+            s = V.subtract(s, V.scale(line_dir, 0.5 * thickness))
+            e = V.add(e, V.scale(line_dir, 0.5 * thickness))
+
+            points =
+              [
+                V.add(s, cross),
+                V.add(e, cross),
+                V.subtract(e, cross),
+                V.subtract(s, cross)
+              ]
+              |> IO.inspect()
+              |> Enum.map(fn {x, y} -> "#{x},#{y}" end)
+              |> Enum.join(" ")
+
+            geo = """
+            <polygon points="#{points}" fill="url(#texture-#{texture})" stroke="none"/>
             """
 
             # geo = """
             # <line x1="#{startX}" y1="#{startY}" x2="#{endX}" y2="#{endY}" stroke-width="#{thickness}" stroke="url(#texture-#{texture})" />
             # """
 
-            geo = """
-            <line x1="#{startX}" y1="#{startY}" x2="#{endX}" y2="#{endY}" stroke-width="#{thickness}px" stroke="#0f0" />
-            """
+            # geo = """
+            # <line x1="#{startX}" y1="#{startY}" x2="#{endX}" y2="#{endY}" stroke-width="#{thickness}" stroke="#00F" />
+            # """
 
             {[stroke_def | defs], [geo | geos]}
           end,
