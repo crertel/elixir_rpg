@@ -48,7 +48,7 @@ defmodule ElixirRpg.World do
     # load up our cells
     # normally, this would be from a file or something, but we're keeping it simple here
     Logger.info("Loading cells")
-    cell_table = :ets.new(:world_cells, [:protected])
+    cell_table = :ets.new(:world_cells, [:protected, :named_table])
 
     [
       %{
@@ -75,16 +75,16 @@ defmodule ElixirRpg.World do
       },
       %{
         name: "house A",
-        bounds: [-10, -10, 510, 510],
+        bounds: [0, 0, 10, 10],
         walls: [
           # W wall
-          {{0, 0}, {0, 500}, 5, "/textures/house1/wall.png", 128, 128},
+          {{0, 0}, {0, 10}, 1, "/textures/house1/wall.png", 128, 128},
           # N wall
-          {{0, 0}, {500, 0}, 5, "/textures/house1/wall.png", 128, 128},
+          {{0, 0}, {10, 0}, 1, "/textures/house1/wall.png", 128, 128},
           # E wall
-          {{500, 0}, {500, 500}, 5, "/textures/house1/wall.png", 128, 128},
+          {{10, 0}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128},
           # S wall
-          {{0, 500}, {500, 500}, 5, "/textures/house1/wall.png", 128, 128}
+          {{0, 10}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128}
         ],
         entities: [],
         flats: [
@@ -96,16 +96,16 @@ defmodule ElixirRpg.World do
       },
       %{
         name: "house B",
-        bounds: [-10, -10, 510, 510],
+        bounds: [0, 0, 10, 10],
         walls: [
           # W wall
-          {{0, 0}, {0, 500}, 5, "/textures/house2/wall.png", 128, 128},
+          {{0, 0}, {0, 10}, 1, "/textures/house2/wall.png", 128, 128},
           # N wall
-          {{0, 0}, {500, 0}, 5, "/textures/house2/wall.png", 128, 128},
+          {{0, 0}, {10, 0}, 1, "/textures/house2/wall.png", 128, 128},
           # E wall
-          {{500, 0}, {500, 500}, 5, "/textures/house2/wall.png", 128, 128},
+          {{10, 0}, {10, 10}, 1, "/textures/house2/wall.png", 128, 128},
           # S wall
-          {{0, 500}, {500, 500}, 5, "/textures/house2/wall.png", 128, 128}
+          {{0, 10}, {10, 10}, 1, "/textures/house2/wall.png", 128, 128}
         ],
         entities: [],
         flats: [
@@ -140,7 +140,7 @@ defmodule ElixirRpg.World do
 
       :ets.insert(RenderPool.get_table(), {cell_id, nil, nil, nil, nil})
 
-      :ets.insert(cell_table, {cell_id, cell})
+      :ets.insert(cell_table, {cell_id, name, cell})
 
       Logger.debug("Loaded cell #{cell_id}")
     end)
@@ -163,10 +163,10 @@ defmodule ElixirRpg.World do
 
     # update cells
     :ets.foldl(
-      fn {_cid, cell}, _acc ->
+      fn {_cid, _cell_name, cell}, _acc ->
         # update
         {cell2, _outbound_messages} = Cell.update(cell, dt)
-        :ets.update_element(cells_table, 2, cell2)
+        # :ets.update_element(cells_table, 2, cell2)
 
         # "render" if anything interesting changed
         Cell.cell(
@@ -178,8 +178,8 @@ defmodule ElixirRpg.World do
         ) = cell2
 
         if wnd or fnd or pnd or entend do
+          IO.puts("had toa draw #{wnd} #{fnd} #{pnd} #{entend}")
           Cell.render(cell2)
-          IO.inspect(Cell.cell_topic(cell2))
 
           Phoenix.PubSub.broadcast(
             ElixirRpg.PubSub,
@@ -187,6 +187,19 @@ defmodule ElixirRpg.World do
             {:cell_render_available, cell2_id}
           )
         end
+
+        :ets.update_element(
+          cells_table,
+          cell2_id,
+          {3,
+           Cell.cell(
+             cell2,
+             walls_need_drawing: false,
+             flats_need_drawing: false,
+             portals_need_drawing: false,
+             entities_need_drawing: false
+           )}
+        )
 
         :ok
       end,
@@ -205,5 +218,11 @@ defmodule ElixirRpg.World do
   end
 
   def get_cell_for_entity(Entity.entity(id: entity_id)) do
+  end
+
+  def get_cell_id_for_name(name) do
+    tid = :ets.whereis(:world_cells)
+    [[id]] = IO.inspect(:ets.match(tid, {:"$1", name, :_}))
+    id
   end
 end
