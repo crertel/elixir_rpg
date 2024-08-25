@@ -22,19 +22,27 @@ defmodule ElixirRpgWeb.UserRegistrationLive do
       <!-- Description -->
       <div class="flex flex-col justify-center items-center w-full">
         <div class="w-3/4 justify-center items-center">
-          <div :if={is_nil @faction }>
+          <div :if={is_nil(@faction)}>
             <h1 class="text-2xl text-zinc-300 text-center">Select your faction.</h1>
           </div>
-          <div class="flex flex-col items-center" :if={!is_nil @faction }>
+          <div :if={!is_nil(@faction)} class="flex flex-col items-center">
+            <div>
+              <h2 class="font-bold text-3xl text-zinc-600 text-center">
+                <%= @faction.display_name %>
+              </h2>
+            </div>
+            <div>
+              <p class="font-bold text-2xl text-zinc-200 text-center"><%= @faction.description %></p>
+            </div>
             <img class="w-[400px]" src={@faction.selection_art} />
             <div>
-            <h2 class="font-bold text-3xl text-zinc-600 text-center"> <%= @faction.display_name %> </h2>
-            <p class="font-bold text-2xl text-zinc-200 text-center"> <%= @faction.description %></p>
+              <p class="font-bold text-2xl text-zinc-200 text-center  p-10">
+                <%= @faction.self_description %>
+              </p>
             </div>
           </div>
         </div>
       </div>
-
       <!-- Creation-->
       <div class="flex flex-col justify-center items-center w-full">
         <div class="w-1/2 justify-center items-center">
@@ -64,14 +72,18 @@ defmodule ElixirRpgWeb.UserRegistrationLive do
 
             <.input field={@form[:email]} type="email" label="Email" required />
             <.input field={@form[:password]} type="password" label="Password" required />
-            <.input field={@form[:faction]}
-                    type="select"
-                    label="Pick a faction"
-                    options={ElixirRpg.Factions.factions()}
-                    required/>
+            <.input
+              field={@form[:faction]}
+              type="select"
+              label="Pick a faction"
+              options={ElixirRpg.Factions.factions()}
+              required
+            />
 
             <:actions>
-              <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
+              <.button phx-disable-with="Creating account..." class="w-full">
+                Create an account
+              </.button>
             </:actions>
           </.simple_form>
         </div>
@@ -82,6 +94,7 @@ defmodule ElixirRpgWeb.UserRegistrationLive do
 
   def handle_event("save", %{"user" => user_params}, socket) do
     user_params = Map.put(user_params, "display_name", user_params["email"])
+
     case Accounts.register_user(user_params) do
       {:ok, user} ->
         {:ok, _} =
@@ -100,13 +113,16 @@ defmodule ElixirRpgWeb.UserRegistrationLive do
 
   def handle_event("validate", %{"user" => user_params}, socket) do
     changeset = Accounts.change_user_registration(%User{}, user_params)
+
     case Ecto.Changeset.fetch_change(changeset, :faction) do
       {:ok, new_faction} ->
-        {:noreply, socket
-        |> assign(:faction, new_faction |> ElixirRpg.Factions.faction_info())
-        |> assign_form( Map.put(changeset, :action, :validate) )}
+        {:noreply,
+         socket
+         |> assign(:faction, new_faction |> ElixirRpg.Factions.faction_info())
+         |> assign_form(Map.put(changeset, :action, :validate))}
 
-      _ -> {:noreply, socket |> assign_form( Map.put(changeset, :action, :validate) )}
+      _ ->
+        {:noreply, socket |> assign_form(Map.put(changeset, :action, :validate))}
     end
   end
 
