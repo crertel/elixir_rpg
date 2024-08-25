@@ -1,113 +1,90 @@
 defmodule ElixirRpgWeb.WorldLive.Index do
   use ElixirRpgWeb, :live_view
+  alias ElixirRpg.RenderPool
 
-  alias ElixirRpg.World
+  # alias ElixirRpg.World
 
   @impl true
   def mount(_params, _session, socket) do
+    socket =
+      socket
+      |> reset_mouse()
+      |> reset_viewport()
+      |> assign(:entities, [])
+      |> assign(:show_logs, false)
+      |> assign(:cell_markup, nil)
+      |> stream(:chat_messages, [])
+      |> stream(:log_messages, [])
+
     if connected?(socket) do
       # subscribe to logging
       Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "util:log:messages")
 
       # figure out what cell we're supposed to be in
       Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "user:#{socket.assigns.current_user.id}:*")
+
+      Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "cell")
+
       # user_entity = World.get_entity_for_account(socket.assigns.current_user)
       # user_cell = World.get_cell_for_user(socket)
 
-      {:ok,
-       socket
-       |> assign(:mouse_position, [0, 0, 0, 0])
-       |> assign(:mouse_state, :up)
-       |> assign(:entities, [])
-       |> assign(:vb_x_min, 0)
-       |> assign(:vb_y_min, 0)
-       |> assign(:vb_width, 960)
-       |> assign(:vb_height, 500)
-       |> assign(:zoom_level, 1.0)
-       |> assign(:show_logs, false)
-       |> stream(:chat_messages, [])
-       |> stream(:log_messages, [])}
+      {:ok, socket}
     else
-      {:ok,
-       socket
-       |> assign(:mouse_position, [0, 0, 0, 0])
-       |> assign(:mouse_state, :up)
-       |> assign(:entities, [])
-       |> assign(:vb_x_min, 0)
-       |> assign(:vb_y_min, 0)
-       |> assign(:vb_width, 960)
-       |> assign(:vb_height, 500)
-       |> assign(:zoom_level, 1.0)
-       |> assign(:show_logs, false)
-       |> stream(:chat_messages, [])
-       |> stream(:log_messages, [])}
+      {:ok, socket}
     end
   end
+
+  defp reset_mouse(socket),
+    do:
+      assign(socket, %{
+        mouse_position: [0, 0, 0, 0],
+        mouse_state: :up
+      })
+
+  defp reset_viewport(socket),
+    do:
+      assign(socket, %{
+        vb_x_min: 0,
+        vb_y_min: 0,
+        vb_width: 960,
+        vb_height: 500,
+        zoom_level: 1.0
+      })
 
   @impl true
   def render(assigns) do
     ~H"""
-    <h1>Map</h1>
-    <ul>
-      <li>viewBox="<%= @vb_x_min %> <%= @vb_y_min %> <%= @vb_width %> <%= @vb_height %>"</li>
-      <li>mouse="<%= inspect(@mouse_position) %>"</li>
-      <li>zoomlevel="<%= inspect(@zoom_level) %>"</li>
-    </ul>
+    <div class="flex flex-col items-center">
+      <h1 class="text-3xl text-zinc-300">Map</h1>
+      <ul class="bg-zinc-300 w-1/2">
+        <li>viewBox="<%= @vb_x_min %> <%= @vb_y_min %> <%= @vb_width %> <%= @vb_height %>"</li>
+        <li>mouse="<%= inspect(@mouse_position) %>"</li>
+        <li>zoomlevel="<%= inspect(@zoom_level) %>"</li>
+      </ul>
 
-    <.live_component
-      module={ElixirRpgWeb.LogOverlayComponent}
-      id="log-overlay"
-      streams={@streams}
-      show={@show_logs}
-    />
+      <.live_component
+        module={ElixirRpgWeb.LogOverlayComponent}
+        id="log-overlay"
+        streams={@streams}
+        show={@show_logs}
+      />
 
-    <div
-      phx-hook="MouseHandler"
-      id="svg_canvas"
-      style="width:960px; height:500px; padding: 0px; margin: 0px;"
-    >
-      <svg
-        x="0"
-        y="0"
-        width="960px"
-        height="500px"
-        viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
-        style="border: 1px solid black; pointer-events: none; margin: 0px;"
+      <div
+        phx-hook="MouseHandler"
+        id="svg_canvas"
+        style="width:960px; height:500px; padding: 0px; margin: 0px;"
       >
-        <defs>
-          <%= for obj <- @entities do %>
-            <%= raw(obj.svg_markup) %>
-          <% end %>
-          <pattern
-            id="smallGrid"
-            width="8"
-            height="8"
-            patternUnits="userSpaceOnUse"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="gray" stroke-width="0.5" />
-          </pattern>
-          <pattern
-            id="grid"
-            width="80"
-            height="80"
-            patternUnits="userSpaceOnUse"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <rect width="80" height="80" fill="url(#smallGrid)" />
-            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="gray" stroke-width="1" />
-          </pattern>
-        </defs>
-
-        <rect
-          x="-1000"
-          y="-1000"
-          width="2000px"
-          height="2000px"
-          preserveAspectRatio="xMidYMid slice"
-          fill="url(#grid)"
-        />
-      </svg>
+        <svg
+          x="0"
+          y="0"
+          width="960px"
+          height="500px"
+          viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
+          style="border: 1px solid black; pointer-events: none; margin: 0px;"
+        >
+          <%= raw(@cell_markup) %>
+        </svg>
+      </div>
     </div>
     """
   end
@@ -273,6 +250,8 @@ defmodule ElixirRpgWeb.WorldLive.Index do
   end
 
   @impl true
+  @spec handle_info({Logger, any(), any()}, Phoenix.LiveView.Socket.t()) ::
+          {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_info({Logger, level, message}, socket) do
     {:noreply,
      stream_insert(
@@ -285,5 +264,13 @@ defmodule ElixirRpgWeb.WorldLive.Index do
        },
        limit: -32
      )}
+  end
+
+  def handle_info({:cell_render_available, cell_id}, socket) do
+    [{_cid, wall_markup, flats_markup, ents_markup, portals_markup}] =
+      :ets.lookup(RenderPool.get_table(), cell_id)
+
+    IO.inspect(wall_markup)
+    {:noreply, assign(socket, svg_markup: wall_markup)}
   end
 end
