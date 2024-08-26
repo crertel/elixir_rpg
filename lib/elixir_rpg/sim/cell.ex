@@ -1,10 +1,14 @@
 defmodule ElixirRpg.Cell do
   require ElixirRpg.RenderPool
+  alias ElixirRpg.Render.PortalRenderer
+  alias ElixirRpg.Render.EntityRenderer
+  alias ElixirRpg.Render.FlatRenderer
   alias ElixirRpg.RenderPool
   require Logger
   require Record
 
   alias Graphmath.Vec2, as: V
+  alias ElixirRpg.Render.WallRenderer
 
   require ElixirRpg.Entity
 
@@ -80,83 +84,41 @@ defmodule ElixirRpg.Cell do
           walls_need_drawing: wnd,
           flats_table: flats,
           flats_need_drawing: fnd,
-          portals_table: _portals,
+          portals_table: portals,
           portals_need_drawing: pnd
         ) = cell
       ) do
-    # find cell in the render pool and update if needed
+    [
+      {walls, wnd, RenderPool.cell_svg(:wall_svg), WallRenderer},
+      {flats, fnd, RenderPool.cell_svg(:flats_svg), FlatRenderer},
+      {ents, entnd, RenderPool.cell_svg(:ents_svg), EntityRenderer},
+      {portals, pnd, RenderPool.cell_svg(:portals_svg), PortalRenderer}
+    ]
+    |> Enum.map(fn {renderable_table, should_render, renderable_offset, renderer} ->
+      if should_render do
+        {defs_markup, geo_markup} =
+          :ets.foldl(
+            fn {_, opts}, {defs, geos} ->
+              {stroke_def, geo} =
+                renderer.render(opts)
 
-    {wall_defs_markup, wall_geo_markup} =
-      if wnd do
-        :ets.foldl(
-          fn {_, {{_startX, _startY} = s, {_endX, _endY} = e, thickness, texture, ix, iy}},
-             {defs, geos} ->
-            stroke_def = """
-            <pattern id="texture-#{texture}" patternUnits="userSpaceOnUse" width="#{ix}" height="#{iy}"  patternTransform="scale(0.0078125 0.0078125)">
-              <image xlink:href="#{texture}" width="#{ix}" height="#{iy}" />
-            </pattern>
-            """
+              {[stroke_def | defs], [geo | geos]}
+            end,
+            {[], []},
+            renderable_table
+          )
 
-            line_dir = V.subtract(e, s) |> V.normalize()
-            cross = V.perp(line_dir) |> V.scale(0.5 * thickness)
-            s = V.subtract(s, V.scale(line_dir, 0.5 * thickness))
-            e = V.add(e, V.scale(line_dir, 0.5 * thickness))
-
-            points =
-              [
-                V.add(s, cross),
-                V.add(e, cross),
-                V.subtract(e, cross),
-                V.subtract(s, cross)
-              ]
-              |> IO.inspect()
-              |> Enum.map(fn {x, y} -> "#{x},#{y}" end)
-              |> Enum.join(" ")
-
-            geo = """
-            <polygon points="#{points}" fill="url(#texture-#{texture})" stroke="none"/>
-            """
-
-            # geo = """
-            # <line x1="#{startX}" y1="#{startY}" x2="#{endX}" y2="#{endY}" stroke-width="#{thickness}" stroke="url(#texture-#{texture})" />
-            # """
-
-            # geo = """
-            # <line x1="#{startX}" y1="#{startY}" x2="#{endX}" y2="#{endY}" stroke-width="#{thickness}" stroke="#00F" />
-            # """
-
-            {[stroke_def | defs], [geo | geos]}
-          end,
-          {[], []},
-          walls
+        :ets.update_element(
+          RenderPool.get_table(),
+          cell_id,
+          {renderable_offset,
+           {
+             defs_markup,
+             geo_markup
+           }}
         )
-      else
-        {[], []}
       end
-
-    wall_svg =
-      """
-      <defs>
-      #{wall_defs_markup |> Enum.uniq() |> Enum.join("\n")}
-      </defs>
-
-      #{Enum.join(wall_geo_markup, "\n")}
-      """
-
-    :ets.update_element(
-      RenderPool.get_table(),
-      cell_id,
-      {RenderPool.cell_svg(:wall_svg), wall_svg}
-    )
-
-    if fnd do
-    end
-
-    if entnd do
-    end
-
-    if pnd do
-    end
+    end)
   end
 
   def render(_) do

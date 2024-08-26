@@ -7,19 +7,19 @@ defmodule ElixirRpg.World do
   1. Boot process.
   2. Load cells
   """
-  require ElixirRpg.RenderPool
-  alias ElixirRpg.Accounts.User
-  alias ElixirRpg.Entity
-  require ElixirRpg.Entity
-
   use GenServer
+
+  require ElixirRpg.Cell
+  require ElixirRpg.Entity
+  require ElixirRpg.RenderPool
   require Record
   require Logger
-  alias ElixirRpg.EntitiesPool
-  alias ElixirRpg.RenderPool
 
+  alias ElixirRpg.Accounts.User
   alias ElixirRpg.Cell
-  require ElixirRpg.Cell
+  alias ElixirRpg.EntitiesPool
+  alias ElixirRpg.Entity
+  alias ElixirRpg.RenderPool
 
   @tick_rate 1000
 
@@ -86,11 +86,14 @@ defmodule ElixirRpg.World do
           # S wall
           {{0, 10}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128}
         ],
-        entities: [],
+        entities: [
+          {"table", {{5, 5}, 0}, {1, 2}}
+        ],
         flats: [
           # floor
-          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house1/wood_floor.png", 128,
-           128}
+          {[{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor.png", 640, 640},
+          # dirt
+          {[{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor_dirt.png", 1280, 1280}
         ],
         portals: []
       },
@@ -110,8 +113,7 @@ defmodule ElixirRpg.World do
         entities: [],
         flats: [
           # floor
-          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house2/wood_floor.png", 128,
-           128}
+          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house2/floor.png", 128, 128}
         ],
         portals: []
       }
@@ -166,7 +168,6 @@ defmodule ElixirRpg.World do
       fn {_cid, _cell_name, cell}, _acc ->
         # update
         {cell2, _outbound_messages} = Cell.update(cell, dt)
-        # :ets.update_element(cells_table, 2, cell2)
 
         # "render" if anything interesting changed
         Cell.cell(
@@ -178,7 +179,6 @@ defmodule ElixirRpg.World do
         ) = cell2
 
         if wnd or fnd or pnd or entend do
-          IO.puts("had toa draw #{wnd} #{fnd} #{pnd} #{entend}")
           Cell.render(cell2)
 
           Phoenix.PubSub.broadcast(
@@ -188,6 +188,7 @@ defmodule ElixirRpg.World do
           )
         end
 
+        # clear render flags
         :ets.update_element(
           cells_table,
           cell2_id,
@@ -221,8 +222,25 @@ defmodule ElixirRpg.World do
   end
 
   def get_cell_id_for_name(name) do
-    tid = :ets.whereis(:world_cells)
-    [[id]] = IO.inspect(:ets.match(tid, {:"$1", name, :_}))
+    [[id]] = :ets.match(:world_cells, {:"$1", name, :_})
     id
+  end
+
+  def get_cell_by_id(id) do
+    case :ets.lookup(:world_cells, id) do
+      [] -> {:error, :notfound}
+      [{^id, _, Cell.cell() = c}] -> {:ok, c}
+    end
+  end
+
+  def spawn_entity(cell, {x, y}, opts),
+    do: GenServer.cast(__MODULE__, {:spawn_entity, cell, {x, y}, opts})
+
+  @impl true
+  def handle_call(
+        {:spawn_entity, cell, {x, y}, opts},
+        _from,
+        world(frame_end: last_time, cells: cells_table) = w
+      ) do
   end
 end
