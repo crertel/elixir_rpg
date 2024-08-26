@@ -53,23 +53,33 @@ defmodule ElixirRpg.World do
     [
       %{
         name: "overworld",
-        bounds: [-100, -100, 1100, 1100],
+        bounds: [-10, -10, 110, 110],
         walls: [
           # W wall
-          {{0, 0}, {0, 1000}, 5, "/textures/pallisade_wall.png", 128, 128},
+          {1, {0, 0}, {0, 100}, 5, "/textures/overworld/pallisade_wall.png", 128, 128},
           # N wall
-          {{0, 0}, {1000, 0}, 5, "/textures/pallisade_wall.png", 128, 128},
+          {2, {0, 0}, {100, 0}, 5, "/textures/overworld/pallisade_wall.png", 128, 128},
           # E wall
-          {{1000, 0}, {1000, 1000}, 5, "/textures/pallisade_wall.png", 128, 128},
+          {3, {100, 0}, {100, 100}, 5, "/textures/overworld/pallisade_wall.png", 128, 128},
           # S wall
-          {{0, 1000}, {1000, 1000}, 5, "/textures/pallisade_wall.png", 128, 128}
+          {4, {0, 100}, {100, 100}, 5, "/textures/overworld/pallisade_wall.png", 128, 128}
         ],
-        entities: [],
+        entities: [
+          {0, ElixirRpg.Brains.PropBrain,
+           %{pos: {10, 10}, bounds: {128, 128}, a: 0, img: "/textures/props/shrub.png"}}
+        ],
         flats: [
           # main plane
-          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/grass.png", 128, 128},
+          {1, [{0, 0}, {0, 100}, {100, 100}, {100, 0}], "/textures/overworld/grass.png", 512,
+           512},
           # N/S throughfare
-          {[{500, 0}, {500, 1000}, {550, 1000}, {550, 0}], "/textures/sand.png", 128, 128}
+          {2, [{50, 0}, {50, 100}, {55, 100}, {55, 0}], "/textures/overworld/sand.png", 512, 512},
+
+          # house A
+          {3, [{55, 70}, {55, 75}, {70, 75}, {70, 70}], "/textures/overworld/sand.png", 512, 512},
+
+          # house B
+          {4, [{20, 20}, {20, 25}, {50, 25}, {50, 20}], "/textures/overworld/sand.png", 512, 512}
         ],
         portals: []
       },
@@ -78,22 +88,22 @@ defmodule ElixirRpg.World do
         bounds: [0, 0, 10, 10],
         walls: [
           # W wall
-          {{0, 0}, {0, 10}, 1, "/textures/house1/wall.png", 128, 128},
+          {1, {0, 0}, {0, 10}, 1, "/textures/house1/wall.png", 128, 128},
           # N wall
-          {{0, 0}, {10, 0}, 1, "/textures/house1/wall.png", 128, 128},
+          {2, {0, 0}, {10, 0}, 1, "/textures/house1/wall.png", 128, 128},
           # E wall
-          {{10, 0}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128},
+          {3, {10, 0}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128},
           # S wall
-          {{0, 10}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128}
+          {4, {0, 10}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128}
         ],
         entities: [
           {"table", {{5, 5}, 0}, {1, 2}}
         ],
         flats: [
           # floor
-          {[{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor.png", 640, 640},
+          {1, [{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor.png", 640, 640},
           # dirt
-          {[{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor_dirt.png", 1280, 1280}
+          {2, [{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor_dirt.png", 1280, 1280}
         ],
         portals: []
       },
@@ -102,18 +112,19 @@ defmodule ElixirRpg.World do
         bounds: [0, 0, 10, 10],
         walls: [
           # W wall
-          {{0, 0}, {0, 10}, 1, "/textures/house2/wall.png", 128, 128},
+          {1, {0, 0}, {0, 10}, 1, "/textures/house2/wall.png", 128, 128},
           # N wall
-          {{0, 0}, {10, 0}, 1, "/textures/house2/wall.png", 128, 128},
+          {2, {0, 0}, {10, 0}, 1, "/textures/house2/wall.png", 128, 128},
           # E wall
-          {{10, 0}, {10, 10}, 1, "/textures/house2/wall.png", 128, 128},
+          {3, {10, 0}, {10, 10}, 1, "/textures/house2/wall.png", 128, 128},
           # S wall
-          {{0, 10}, {10, 10}, 1, "/textures/house2/wall.png", 128, 128}
+          {4, {0, 10}, {10, 10}, 1, "/textures/house2/wall.png", 128, 128}
         ],
         entities: [],
         flats: [
           # floor
-          {[{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house2/floor.png", 128, 128}
+          {1, [{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}], "/textures/house2/floor.png", 128,
+           128}
         ],
         portals: []
       }
@@ -122,26 +133,28 @@ defmodule ElixirRpg.World do
                      name: name,
                      bounds: bounds,
                      walls: walls,
-                     entities: _ents,
+                     entities: ents,
                      flats: flats,
-                     portals: _portals
+                     portals: portals
                    } ->
       Cell.cell(id: cell_id) = cell = Cell.new(name, bounds)
 
-      Enum.map(walls, fn {wall_start, wall_end, thickness, texture, ix, iy} ->
-        Cell.add_wall(cell, wall_start, wall_end, thickness, texture, ix, iy)
+      Enum.map(walls, fn {idx, wall_start, wall_end, thickness, texture, ix, iy} ->
+        Cell.add_wall(cell, idx, wall_start, wall_end, thickness, texture, ix, iy)
       end)
 
-      Enum.map(flats, fn {verts, texture, ix, iy} ->
-        Cell.add_flat(cell, verts, texture, ix, iy)
+      Enum.map(flats, fn {idx, verts, texture, ix, iy} ->
+        Cell.add_flat(cell, idx, verts, texture, ix, iy)
       end)
 
-      # Enum.map(ents, fn ent -> Cell.add_entity(cell) end)
+      Enum.map(ents, fn ent -> Cell.add_entity(cell, ent) end)
 
-      # Enum.map(portals, fn portal -> Cell.add_portal(cell) end)
+      Enum.map(portals, fn portal -> Cell.add_portal(cell, portal) end)
 
+      # initialize the cell in the render pool
       :ets.insert(RenderPool.get_table(), {cell_id, nil, nil, nil, nil})
 
+      # commit the cell to the cell table
       :ets.insert(cell_table, {cell_id, name, cell})
 
       Logger.debug("Loaded cell #{cell_id}")
