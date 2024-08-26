@@ -6,12 +6,12 @@ defmodule ElixirRpgWeb.WorldLive.Index do
 
   # remember, 128px = 1 unit = 1 meter
 
-  @canvas_width 960
-  @canvas_height 500
+  @canvas_width 1280
+  @canvas_height 720
 
   @impl true
   def mount(_params, _session, socket) do
-    cell_id = World.get_cell_id_for_name("house A")
+    cell_id = World.get_cell_id_for_name("overworld")
 
     socket =
       socket

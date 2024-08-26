@@ -57,20 +57,20 @@ defmodule ElixirRpg.Cell do
     )
   end
 
-  def update(cell(id: id, entity_table: entity_table) = cell, _dt) do
+  def update(cell(id: id, entity_table: entity_table) = cell, dt) do
     Logger.debug("Start update cell #{id}")
 
     # todo: update entities
     :ets.foldl(
-      fn {_eid, _entity}, acc ->
-        # Cell.update(cell, dt)
+      fn {eid, entity}, acc ->
+        # TODO
+        # {_entity, _out_messages} = post_tick_entity(entity, cell, dt)
         acc
       end,
       [],
       entity_table
     )
 
-    # todo: resolve intents
     Logger.debug("End update cell #{id}")
     {cell, []}
   end
@@ -96,16 +96,27 @@ defmodule ElixirRpg.Cell do
     ]
     |> Enum.map(fn {renderable_table, should_render, renderable_offset, renderer} ->
       if should_render do
-        {defs_markup, geo_markup} =
+        renderables =
           :ets.foldl(
-            fn {_, opts}, {defs, geos} ->
-              {stroke_def, geo} =
+            fn {_, opts}, acc ->
+              {idx, pattern, geo} =
                 renderer.render(opts)
 
-              {[stroke_def | defs], [geo | geos]}
+              [{idx, pattern, geo} | acc]
             end,
-            {[], []},
+            [],
             renderable_table
+          )
+
+        {pattern_markups, geo_markups} =
+          renderables
+          |> Enum.sort_by(&elem(&1, 0))
+          |> Enum.reverse()
+          |> Enum.reduce(
+            {[], []},
+            fn {_idx, pattern, geo}, {patterns, geos} ->
+              {[pattern | patterns], [geo | geos]}
+            end
           )
 
         :ets.update_element(
@@ -113,8 +124,8 @@ defmodule ElixirRpg.Cell do
           cell_id,
           {renderable_offset,
            {
-             defs_markup,
-             geo_markup
+             pattern_markups |> Enum.uniq(),
+             geo_markups |> Enum.uniq()
            }}
         )
       end
@@ -125,17 +136,40 @@ defmodule ElixirRpg.Cell do
     # Logger.warning("Unkonwn cell render on #{inspect(c)}")
   end
 
-  def add_wall(cell(walls_table: walls) = _cell, wall_start, wall_end, thickness, texture, ix, iy) do
-    :ets.insert(walls, {make_ref(), {wall_start, wall_end, thickness, texture, ix, iy}})
+  def add_wall(
+        cell(walls_table: walls) = _cell,
+        idx,
+        wall_start,
+        wall_end,
+        thickness,
+        texture,
+        ix,
+        iy
+      ) do
+    :ets.insert(walls, {make_ref(), {idx, wall_start, wall_end, thickness, texture, ix, iy}})
   end
 
-  def add_flat(cell(flats_table: flats) = _cell, verts, texture, ix, iy) do
-    :ets.insert(flats, {make_ref(), {verts, texture, ix, iy}})
+  def add_flat(cell(flats_table: flats) = _cell, idx, verts, texture, ix, iy) do
+    :ets.insert(flats, {make_ref(), {idx, verts, texture, ix, iy}})
   end
 
-  def add_entity(cell() = _cell) do
+  def add_entity(cell() = _cell, _entity) do
+    :nyi
   end
 
-  def add_portal(cell() = _cell) do
+  def add_portal(cell() = _cell, _portal) do
+    :nyi
   end
+
+  # def pre_tick_entity(Entity.entity(id: eid) = ent, Cell.cell() = c, messages, dt) do
+  #  # TODO
+  #  intents = []
+  #  {ent, intents}
+  # end
+  #
+  # def post_tick_entity(Entity.entity(id: eid) = ent, Cell.cell() = c, dt) do
+  #  # TODO
+  #  out_messages = []
+  #  {ent, out_messages}
+  # end
 end
