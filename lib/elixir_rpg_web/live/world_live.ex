@@ -4,6 +4,11 @@ defmodule ElixirRpgWeb.WorldLive.Index do
 
   alias ElixirRpg.World
 
+  # remember, 128px = 1 unit = 1 meter
+
+  @canvas_width 960
+  @canvas_height 500
+
   @impl true
   def mount(_params, _session, socket) do
     cell_id = World.get_cell_id_for_name("house A")
@@ -13,8 +18,11 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       |> refresh_cell(cell_id)
       |> reset_mouse()
       |> reset_viewport()
+      # |> lookat_viewport({0, 0}, 1)
       |> assign(:entities, [])
       |> assign(:show_logs, false)
+      |> assign(:canvas_width, @canvas_width)
+      |> assign(:canvas_height, @canvas_height)
       |> stream(:chat_messages, [])
       |> stream(:log_messages, [])
 
@@ -48,10 +56,21 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       assign(socket, %{
         vb_x_min: 0,
         vb_y_min: 0,
-        vb_width: 960,
-        vb_height: 500,
+        vb_width: @canvas_width,
+        vb_height: @canvas_height,
         zoom_level: 1.0
       })
+
+  defp lookat_viewport(socket, {target_x, target_y}, zoom_level) do
+    aspect_ratio =
+      assign(socket, %{
+        vb_x_min: target_x - 0.5 * @canvas_width * zoom_level,
+        vb_y_min: target_y - 0.5 * @canvas_height * zoom_level,
+        vb_width: @canvas_width * zoom_level,
+        vb_height: @canvas_height * zoom_level,
+        zoom_level: zoom_level
+      })
+  end
 
   @impl true
   def render(assigns) do
@@ -74,31 +93,29 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       <div
         phx-hook="MouseHandler"
         id="svg_canvas"
-        style="width:960px; height:500px; padding: 0px; margin: 0px;"
+        style={"min-width:#{@canvas_width}px; min-height:#{@canvas_height}px; padding: 0px; margin: 0px;"}
       >
         <svg
           x="0"
           y="0"
-          width="960px"
-          height="500px"
+          width={# {@canvas_width}px"}
+          height={"#{@canvas_height}px"}
           viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
           style="border: 1px solid black; pointer-events: none; margin: 0px;"
         >
+          <%= raw(@svg_defs) %>
+
           <g transform="scale(1,-1)">
-            <%= raw(@svg_markup) %>
+            <%= raw(@svg_geos) %>
+
             <line x1="0" y1="0" x2="10" y2="0" stroke-width="1" stroke="#0F0" />
             <line x1="0" y1="0" x2="0" y2="10" stroke-width="1" stroke="#F00" />
           </g>
         </svg>
-        <pre>
-        <%= @svg_markup %>
-        </pre>
       </div>
     </div>
     """
   end
-
-  # <use xlink:href="#a" transform="rotate(0 150 150) translate(150 150)" />
 
   @impl true
   def handle_event("mouse_enter", _, socket) do
@@ -181,7 +198,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
 
     # calculate the old and new bounds
     old_vb_bounds = Graphmath.Vec2.create(old_vb_width, old_vb_height)
-    default_vb_bounds = Graphmath.Vec2.create(960.0, 500.0)
+    default_vb_bounds = Graphmath.Vec2.create(@canvas_width, @canvas_height)
     new_vb_bounds = Graphmath.Vec2.scale(default_vb_bounds, new_zoom_scale)
 
     # finally, calculate the origin/minimum point of the view box
@@ -281,12 +298,29 @@ defmodule ElixirRpgWeb.WorldLive.Index do
 
   def refresh_cell(socket, cell_id) do
     case :ets.lookup(RenderPool.get_table(), cell_id) do
-      [{_cid, wall_markup, flats_markup, ents_markup, portals_markup}] ->
-        IO.inspect(wall_markup)
-        assign(socket, svg_markup: wall_markup)
+      [
+        {_cid, {wall_defs, wall_geos}, {flat_defs, flat_geos}, {ent_defs, ent_geos},
+         {portal_defs, portal_geos}}
+      ] ->
+        assign(socket,
+          svg_defs: """
+          <defs>
+          #{flat_defs}
+          #{wall_defs}
+          #{ent_defs}
+          #{portal_defs}
+          </defs>
+          """,
+          svg_geos: """
+          #{flat_geos}
+          #{wall_geos}
+          #{ent_geos}
+          #{portal_geos}
+          """
+        )
 
       _ ->
-        socket
+        assign(socket, svg_defs: "", svg_geos: "")
     end
   end
 end

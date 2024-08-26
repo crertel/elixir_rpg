@@ -15,7 +15,6 @@ defmodule ElixirRpg.Render.WallRenderer do
         V.subtract(e, cross),
         V.subtract(s, cross)
       ]
-      |> IO.inspect()
       |> Enum.map(fn {x, y} -> "#{x},#{y}" end)
       |> Enum.join(" ")
 
