@@ -22,21 +22,30 @@ I'm currently working as Head of Engineering at GetThru, leading a great team of
 
 # Obligatory Plug
 
-**GO ATTEND BRIAN MEEKER'S RABBITMQ TALK**
+**GO ATTEND BRIAN MEEKER'S TALK**
 
 (not even kidding.)
 
 ---
 
-Part 0: Prelude
+## Acknowledgements
+
+I'd like to thank:
+
+* Isaac Yonemoto
+* Aos Dabbagh
+* Distractions
+* Dorian
+
+---
+
+# Part 0: Prelude
 
 > We do these things not becaue they are easy, but because we thought they would be easy.
 
 ---
 
 # Why game development in Elixir and Phoenix?
-
-To answer this, we first need to ask--why game development?
 
 ---
 
@@ -54,25 +63,9 @@ The sorts of games I work on are simulations, which are intricate and which are 
 
 ## Game development is *liberating*.
 
-Our jobs tend to have systems people need to work, built on codebases we morlochs hate to maintian but are bribed to.
-
-For a small game project, nobody cares if I add bugs.
-
-Nobody cares if I try something suboptimal.
-
-Nobody cares if I add something I find neat.
-
-That's freeing.
-
 ---
 
 # Okay, but why Phoenix and Elixir?
-
-I'll let you in on something:
-
-I'm weird. I'm strange. I'm curious.
-
-I want to use the wrong tool for the job and see how far I can get.
 
 ---
 
@@ -85,7 +78,8 @@ while (game.is_running) {
   send(newState, game.clients);
 }
 ```
--
+
+---
 
 And for the client, something like this:
 
@@ -100,11 +94,12 @@ while (game.is_running and game.is_connected) {
 
 ---
 
-The core idea is that you take in events, you update your state with them, you render that state, and you loop.
 
-That core idea still leaves a lot of quesitons, though.
+## Events -> Upate -> Render -> Repeat
 
 ---
+
+## But...
 
 * Do you process the game objects serially or concurrently?
 * Do objects just get to do whatever they want, or is it orchestrated?
@@ -112,30 +107,10 @@ That core idea still leaves a lot of quesitons, though.
 * Are objcets allowed to chnage their behavior? If so, how is that handled?
 * Are objects allowed to change their state schema?
 
----
-
-To answer these questions, a technique called Entity Component Systems was developed.
-
-Objects--entities--are collections of handles to components, such as position, rendering information, collision information, etc.
-
-The components are read from by the systems, updated, and written back out to.
-
-Two key advantages to this:
-
-* Entities can have plug-and-play components -> great for authoring!
-* Components can be allocated in chunks of contiguous memory -> great for speed!
 
 ---
 
-On the flipside though:
-
-* Can be hard to get sequencing of systems to work correctly.
-* The BEAM means contiguous memory allocations kinda don't matter.
-* Expressing game logic in terms of components can be awkward.
-
----
-
-So, let's see how I tackled these problems.
+I want to try to find answers to these questions.
 
 ---
 
@@ -158,9 +133,9 @@ Let's talk about what we want in the game:
 * I want floors of different shapes and textures.
 * I want to be able to cast spells.
 * I want to be able to talk to people.
-* I want to hvae multiple people connected at once.
+* I want to have multiple people connected at once.
 
---
+---
 
 On the technical side, that's where we're Gonna Get Weird:
 
@@ -172,31 +147,106 @@ On the technical side, that's where we're Gonna Get Weird:
 
 --
 
-Every single one of those technical choices gave me a headache.
+## Every single one of those technical choices made life harder.
 
 ---
 
-Not using nifs?
-
-Okay, gotta be a little worried about performance, but that's okay.
+# Every.
 
 ---
 
-Not using Ecto?
-
-Slightly more annoying, but it really just means I want to avoid using forms for input.
-
-It also meant I gave up on some rapid iteration tooling a previous attempt had, but that's ultimately for the better.
+# Single.
 
 ---
 
-Scriptbale magic system?
-
-Well, again, kinda weird, but Lua has a few wrappers for Elixir, so we're okay there.
+# One.
 
 ---
 
-Not too much GenServers?
+Again, my hubris:
 
-Hooo boy.
+* I want to do all of my rendering in SVGs via LiveView.
+* I want to use GenServers, but not too much GenServers.
+* I want to have the magic system scriptable.
+* I want to not use Ecto.
+* I want to not use nifs.
 
+---
+
+# Part 2: NPC Chat
+
+---
+
+# A theory of NPC knowledge
+
+---
+
+## Result?
+
+---
+
+**FAILURE. ETIMEOUT**
+
+---
+
+## Why?
+
+---
+
+# Part 3: Magic System
+
+---
+
+## What if wizards were programmers?
+
+---
+
+## Result?
+
+---
+
+**Partal success!**
+
+---
+
+## Why?
+
+---
+
+# Part 4: SVG rendering
+
+---
+
+# A tale of too-clever-by-half
+
+---
+
+## Result?
+
+---
+
+**Partial success!**
+
+---
+
+## An attempted fix.
+
+---
+
+(demo)
+
+---
+
+# Other adventures
+
+---
+
+## Logging
+
+---
+
+## Dashboard plugins
+
+---
+
+# Development gallery
