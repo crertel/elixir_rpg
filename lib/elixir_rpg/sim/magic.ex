@@ -7,7 +7,6 @@ defmodule ElixirRpg.Magic do
       |> Lua.set!([:caster_id], caster_id)
       |> Lua.set!([:cell_id], cell_id)
       |> Lua.eval!("""
-      print "hi"
       --- empty stack used to handle spell clause outputs
       ret_stack = {}
       function push(val)
@@ -21,51 +20,51 @@ defmodule ElixirRpg.Magic do
       function peek()
         return ret_stack[1]
       end
-        print "okay"
       """)
       |> elem(1)
       |> Lua.load_api(__MODULE__)
 
     deflua closest_entity(), state do
-      caster = Lua.get!(state, [:caster_id])
-      cell = Lua.get!(state, [:cell_id])
-
-      # get entity ref
+      {cell,caster} = cell_and_caster(state)
 
       IO.puts "closest"
+
       {[], state}
     end
 
     deflua farthest_entity(), state do
-      caster = Lua.get!(state, [:caster_id])
-      cell = Lua.get!(state, [:cell_id])
-
-      # get entity ref
+      {cell,caster} = cell_and_caster(state)
 
       IO.puts "farthest"
+
       {[], state}
     end
 
     deflua heal(), state do
-      caster = Lua.get!(state, [:caster_id])
-      cell = Lua.get!(state, [:cell_id])
+      {cell,caster} = cell_and_caster(state)
 
       IO.puts "heal"
+
       {[], state}
     end
 
     deflua hurt(), state do
-      caster = Lua.get!(state, [:caster_id])
-      cell = Lua.get!(state, [:cell_id])
+      {cell,caster} = cell_and_caster(state)
 
       IO.puts "hurt"
+
       {[],state}
     end
+
+    defp cell_and_caster(state), do:
+    {
+      state |> Lua.get!([:caster_id]) |> World.get_cell_by_id!(),
+      state |> Lua.get!([:cell_id]) |> World.get_entity_by_id!()
+    }
   end
 
-
   def words_to_spell(words) do
-    spell = words
+    words
     |> String.downcase()
     |> String.split()
     |> Enum.reduce_while([],
@@ -96,7 +95,12 @@ defmodule ElixirRpg.Magic do
      end)
     |> Enum.join("\n")
 
-    Spells.begin_casting(caster_id, cell_id)
-    |> Lua.eval!(spell_source)
+    try do
+      Spells.begin_casting(caster_id, cell_id)
+      |> Lua.eval!(spell_source)
+      :ok
+    rescue
+      _ -> :explode
+    end
   end
 end
