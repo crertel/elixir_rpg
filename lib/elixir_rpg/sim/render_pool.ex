@@ -10,7 +10,7 @@ defmodule ElixirRpg.RenderPool do
   def get_table(), do: __MODULE__
 
   def set_cell_renderables(cell_id, flats, walls, entities, portals), do:
-    :ets.insert(__MODULE__, cell_id, {flats, walls, entities, portals})
+    :ets.insert(__MODULE__, {cell_id, {flats, walls, entities, portals}})
 
   def get_cell_renderables!(cell_id) do
     [{flats, walls, entities, portals}] = :ets.lookup(__MODULE__, cell_id)

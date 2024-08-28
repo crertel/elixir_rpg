@@ -87,7 +87,7 @@ defmodule ElixirRpg.Cell do
       [FlatRenderer.render(opts) | acc]
     end, [], flats)
 
-    rendered_entities = :ets.foldl(fn {_, opts}, acc ->
+    rendered_entities = :ets.foldl(fn {_, {_brain,opts}}, acc ->
       [EntityRenderer.render(opts) | acc]
     end, [], ents)
 

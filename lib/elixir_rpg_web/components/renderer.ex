@@ -4,40 +4,40 @@ defmodule ElixirRpgWeb.Renderer do
 
   def flat_pattern(assigns) do
     ~H"""
-    <pattern id="texture-#{@texture}" patternUnits="userSpaceOnUse" width="#{@ix}" height="#{@iy}"  patternTransform="scale(0.0078125 0.0078125)">
-       <image xlink:href="#{@texture}" width="#{@ix}" height="#{@iy}" />
+    <pattern id={"texture-#{@texture}"} patternUnits="userSpaceOnUse" width={@ix} height={@iy} patternTransform="scale(0.0078125 0.0078125)">
+       <image xlink:href={@texture} width={@ix} height={@iy} />
     </pattern>
     """
   end
 
   def flat_geo(assigns) do
     ~H"""
-    <polygon points="#{@points}" fill="url(#texture-#{@texture})" stroke="none"/>
+    <polygon points={@points} fill={"url(#texture-#{@texture})"} stroke="none"/>
     """
   end
 
   def wall_pattern(assigns) do
     ~H"""
-     <pattern id="texture-#{@texture}" patternUnits="userSpaceOnUse" width="#{@ix}" height="#{@iy}"  patternTransform="scale(0.0078125 0.0078125)">
-       <image xlink:href="#{@texture}" width="#{@ix}" height="#{@iy}" />
+     <pattern id={"texture-#{@texture}"} patternUnits="userSpaceOnUse" width={@ix} height={@iy}  patternTransform="scale(0.0078125 0.0078125)">
+       <image xlink:href={@texture} width={@ix} height={@iy} />
      </pattern>
     """
   end
 
   def wall_geo(assigns) do
     ~H"""
-    <polygon points="#{@points}" fill="url(#texture-#{@texture})" stroke="none"/>
+    <polygon points={@points} fill={"url(#texture-#{@texture})"} stroke="none"/>
     """
   end
 
-  def portal(assigns) do
+  def portal_geo(assigns) do
     ~H"""
     """
   end
 
-  def entity(assigns) do
+  def entity_geo(assigns) do
     ~H"""
-    <image xlink:href="#{@img}"
+    <image xlink:href={@img}
            width={"#{@bx}"}
            height={"#{@by}"}
            x={"#{-0.5 * @bx}"}
