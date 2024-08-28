@@ -59,7 +59,8 @@ defmodule ElixirRpg.MixProject do
       {:jason, "~> 1.4.4"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5.7"},
-      {:graphmath, "~> 2.6.0"}
+      {:graphmath, "~> 2.6.0"},
+      {:lua, "~> 0.0.15"}
     ]
   end
 
