@@ -3,6 +3,8 @@ defmodule ElixirRpgWeb.WorldLive.Index do
   alias ElixirRpg.RenderPool
 
   alias ElixirRpg.World
+  alias ElixirRpg.Cell
+  alias ElixirRpgWeb.Renderer
 
   # remember, 128px = 1 unit = 1 meter
 
@@ -18,7 +20,6 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       |> refresh_cell(cell_id)
       |> reset_mouse()
       |> reset_viewport()
-      # |> lookat_viewport({0, 0}, 1)
       |> assign(:entities, [])
       |> assign(:cell_id, cell_id)
       |> assign(:show_logs, false)
@@ -34,7 +35,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       # figure out what cell we're supposed to be in
       Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "user:#{socket.assigns.current_user.id}:*")
 
-      Phoenix.PubSub.subscribe(ElixirRpg.PubSub, "cell")
+      Phoenix.PubSub.subscribe(ElixirRpg.PubSub, Cell.cell_topic(cell_id))
 
       # user_entity = World.get_entity_for_account(socket.assigns.current_user)
       # user_cell = World.get_cell_for_user(socket)
@@ -106,17 +107,37 @@ defmodule ElixirRpgWeb.WorldLive.Index do
           style="border: 1px solid black; pointer-events: none; margin: 0px;"
         >
           <defs>
-            <%= raw(@svg_flat_defs) %>
-            <%= raw(@svg_wall_defs) %>
-            <%= raw(@svg_ent_defs) %>
-            <%= raw(@svg_portal_defs) %>
+            <Renderer.flat_pattern :for={flat <- @flats}
+            texture={flat.texture}
+            ix={flat.ix}
+            iy={flat.iy}
+             />
+            <Renderer.wall_pattern :for={wall <- @walls}
+               texture={wall.texture}
+            ix={wall.ix}
+            iy={wall.iy}
+            />
+            <Renderer.portal_pattern :for={portal <- @portals} />
           </defs>
 
           <g transform="scale(1,-1)">
-            <%= raw(@svg_flat_geos) %>
-            <%= raw(@svg_wall_geos) %>
-            <%= raw(@svg_ent_geos) %>
-            <%= raw(@svg_portal_geos) %>
+
+            <Renderer.flat_geo :for={flat <- @flats |> Enum.uniq}
+            points={flat.points}
+            texture={flat.texture}
+            />
+            <Renderer.wall_geo :for={wall <- @walls |> Enum.uniq}
+            points={wall.points}
+            texture={wall.texture}
+            />
+            <Renderer.entity_geo :for={entity <- @entities |> Enum.uniq}
+            x={entity.x}
+            y={entity.y}
+            bx={entity.bx}
+            by={entity.by}
+            theta={entity.theta}
+            img={entity.img}/>
+            <Renderer.portal_geo :for={portal <- @portals |> Enum.uniq} />
 
             <line x1="0" y1="0" x2="10" y2="0" stroke-width="1" stroke="#0F0" />
             <line x1="0" y1="0" x2="0" y2="10" stroke-width="1" stroke="#F00" />
@@ -309,22 +330,19 @@ defmodule ElixirRpgWeb.WorldLive.Index do
   def refresh_cell(socket, cell_id) do
     case :ets.lookup(RenderPool.get_table(), cell_id) do
       [
-        {_cid, {wall_defs, wall_geos}, {flat_defs, flat_geos}, {ent_defs, ent_geos},
-         {portal_defs, portal_geos}}
+        {_cid, {flats, walls, ents, portals}}
       ] ->
-        assign(socket,
-          svg_flat_defs: flat_defs |> IO.inspect(label: "flat"),
-          svg_wall_defs: wall_defs,
-          svg_ent_defs: ent_defs,
-          svg_portal_defs: portal_defs,
-          svg_flat_geos: flat_geos,
-          svg_wall_geos: wall_geos,
-          svg_ent_geos: ent_geos |> IO.inspect(label: "ents"),
-          svg_portal_geos: portal_geos
-        )
+        ordered_flats = Enum.sort_by(flats, fn {idx, opts} -> idx end) |> Enum.map(&elem(&1, 1))
+        ordered_walls = Enum.sort_by(walls, fn {idx, opts} -> idx end) |> Enum.map(&elem(&1, 1))
+        ordered_ents = Enum.sort_by(ents, fn {idx, opts} -> idx end) |> Enum.map(&elem(&1, 1))
+        ordered_portals = Enum.sort_by(portals, fn {idx, opts} -> idx end) |> Enum.map(&elem(&1, 1))
 
-      _ ->
-        assign(socket, svg_defs: "", svg_geos: "")
+        assign(socket,
+          walls: ordered_walls,
+          flats: ordered_flats,
+          entities: ordered_ents,
+          portals: ordered_portals
+        )
     end
   end
 end

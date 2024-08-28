@@ -182,7 +182,7 @@ defmodule ElixirRpg.World do
         {cell2, _outbound_messages} = Cell.update(cell, dt)
 
         # persist new cell state
-        :ets.insert(cells_table, {cell_id, {cell_id, cell_name, cell2}})
+        :ets.insert(cells_table, {cell_id, cell_name, cell2})
 
         # notify renderers
         Cell.render(cell2)
