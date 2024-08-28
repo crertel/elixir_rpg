@@ -10,7 +10,7 @@ defmodule ElixirRpg.Cell do
   alias Graphmath.Vec2, as: V
   alias ElixirRpg.Render.WallRenderer
 
-  require ElixirRpg.Entity
+  #require ElixirRpg.Entity
 
   Record.defrecord(:cell,
     id: nil,
@@ -62,9 +62,13 @@ defmodule ElixirRpg.Cell do
 
     # todo: update entities
     :ets.foldl(
-      fn {eid, entity}, acc ->
-        # TODO
-        # {_entity, _out_messages} = post_tick_entity(entity, cell, dt)
+      fn {eid, {brain, state}}, acc ->
+        # TODO message
+        {new_state, _out_mesages} = brain.update(cell, state, [], dt)
+
+        :ets.insert(entity_table, {eid,{brain,new_state}})
+
+        # do nothin atm
         acc
       end,
       [],
@@ -72,7 +76,7 @@ defmodule ElixirRpg.Cell do
     )
 
     Logger.debug("End update cell #{id}")
-    {cell, []}
+    {cell(cell, entities_need_drawing: true), []}
   end
 
   def render(
@@ -153,8 +157,8 @@ defmodule ElixirRpg.Cell do
     :ets.insert(flats, {make_ref(), {idx, verts, texture, ix, iy}})
   end
 
-  def add_entity(cell() = _cell, _entity) do
-    :nyi
+  def add_entity(cell(entity_table: ents) = _cell, brain, initial_state) do
+    :ets.insert(ents, {make_ref(), {brain, initial_state}})
   end
 
   def add_portal(cell() = _cell, _portal) do

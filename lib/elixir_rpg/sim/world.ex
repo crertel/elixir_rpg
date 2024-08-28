@@ -10,7 +10,6 @@ defmodule ElixirRpg.World do
   use GenServer
 
   require ElixirRpg.Cell
-  require ElixirRpg.Entity
   require ElixirRpg.RenderPool
   require Record
   require Logger
@@ -18,7 +17,7 @@ defmodule ElixirRpg.World do
   alias ElixirRpg.Accounts.User
   alias ElixirRpg.Cell
   alias ElixirRpg.EntitiesPool
-  alias ElixirRpg.Entity
+
   alias ElixirRpg.RenderPool
 
   @tick_rate 1000
@@ -41,7 +40,7 @@ defmodule ElixirRpg.World do
 
   @impl true
   def init(nil) do
-    EntitiesPool.init()
+    #EntitiesPool.init()
     RenderPool.init()
     Logger.info("World starting")
 
@@ -65,8 +64,8 @@ defmodule ElixirRpg.World do
           {4, {0, 100}, {100, 100}, 5, "/textures/overworld/pallisade_wall.png", 128, 128}
         ],
         entities: [
-          {0, ElixirRpg.Brains.PropBrain,
-           %{pos: {10, 10}, bounds: {128, 128}, a: 0, img: "/textures/props/shrub.png"}}
+          {ElixirRpg.Brains.PropBrain,
+           %{pos: {10, 10}, bounds: {4, 4}, a: 0, img: "/textures/props/shrub.png"}}
         ],
         flats: [
           # main plane
@@ -97,7 +96,6 @@ defmodule ElixirRpg.World do
           {4, {0, 10}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128}
         ],
         entities: [
-          {"table", {{5, 5}, 0}, {1, 2}}
         ],
         flats: [
           # floor
@@ -147,7 +145,9 @@ defmodule ElixirRpg.World do
         Cell.add_flat(cell, idx, verts, texture, ix, iy)
       end)
 
-      Enum.map(ents, fn ent -> Cell.add_entity(cell, ent) end)
+      Enum.map(ents, fn {brain, opts} ->
+        Cell.add_entity(cell, brain, opts)
+      end)
 
       Enum.map(portals, fn portal -> Cell.add_portal(cell, portal) end)
 
@@ -228,11 +228,11 @@ defmodule ElixirRpg.World do
      )}
   end
 
-  def get_entity_for_account(%User{id: user_id}) do
-  end
+  #def get_entity_for_account(%User{id: user_id}) do
+  #end
 
-  def get_cell_for_entity(Entity.entity(id: entity_id)) do
-  end
+  #def get_cell_for_entity(Entity.entity(id: entity_id)) do
+  #end
 
   def get_cell_id_for_name(name) do
     [[id]] = :ets.match(:world_cells, {:"$1", name, :_})
