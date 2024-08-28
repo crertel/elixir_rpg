@@ -20,6 +20,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       |> reset_viewport()
       # |> lookat_viewport({0, 0}, 1)
       |> assign(:entities, [])
+      |> assign(:cell_id, cell_id)
       |> assign(:show_logs, false)
       |> assign(:canvas_width, @canvas_width)
       |> assign(:canvas_height, @canvas_height)
@@ -81,6 +82,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
         <li>viewBox="<%= @vb_x_min %> <%= @vb_y_min %> <%= @vb_width %> <%= @vb_height %>"</li>
         <li>mouse="<%= inspect(@mouse_position) %>"</li>
         <li>zoomlevel="<%= inspect(@zoom_level) %>"</li>
+        <li>cellid="<%= @cell_id%>"</li>
       </ul>
 
       <.live_component
@@ -93,7 +95,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
       <div
         phx-hook="MouseHandler"
         id="svg_canvas"
-        style={"min-width:#{@canvas_width}px; min-height:#{@canvas_height}px; padding: 0px; margin: 0px;"}
+        style={"min-width: #{@canvas_width}px; min-height: #{@canvas_height}px; padding: 0px; margin: 0px;"}
       >
         <svg
           x="0"
@@ -103,10 +105,18 @@ defmodule ElixirRpgWeb.WorldLive.Index do
           viewBox={"#{@vb_x_min} #{@vb_y_min} #{@vb_width} #{@vb_height}"}
           style="border: 1px solid black; pointer-events: none; margin: 0px;"
         >
-          <%= raw(@svg_defs) %>
+          <defs>
+          <%= raw(@svg_flat_defs) %>
+          <%= raw(@svg_wall_defs) %>
+          <%= raw(@svg_ent_defs) %>
+          <%= raw(@svg_portal_defs) %>
+          </defs>
 
           <g transform="scale(1,-1)">
-            <%= raw(@svg_geos) %>
+            <%= raw(@svg_flat_geos) %>
+            <%= raw(@svg_wall_geos) %>
+            <%= raw(@svg_ent_geos) %>
+            <%= raw(@svg_portal_geos) %>
 
             <line x1="0" y1="0" x2="10" y2="0" stroke-width="1" stroke="#0F0" />
             <line x1="0" y1="0" x2="0" y2="10" stroke-width="1" stroke="#F00" />
@@ -303,20 +313,14 @@ defmodule ElixirRpgWeb.WorldLive.Index do
          {portal_defs, portal_geos}}
       ] ->
         assign(socket,
-          svg_defs: """
-          <defs>
-          #{flat_defs}
-          #{wall_defs}
-          #{ent_defs}
-          #{portal_defs}
-          </defs>
-          """,
-          svg_geos: """
-          #{flat_geos}
-          #{wall_geos}
-          #{ent_geos}
-          #{portal_geos}
-          """
+          svg_flat_defs: flat_defs |> IO.inspect(label: "flat"),
+          svg_wall_defs: wall_defs,
+          svg_ent_defs: ent_defs,
+          svg_portal_defs: portal_defs,
+          svg_flat_geos: flat_geos,
+          svg_wall_geos: wall_geos,
+          svg_ent_geos: ent_geos |> IO.inspect(label: "ents"),
+          svg_portal_geos: portal_geos
         )
 
       _ ->

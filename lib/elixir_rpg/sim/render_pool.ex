@@ -4,7 +4,6 @@ defmodule ElixirRpg.RenderPool do
 
   """
   require Record
-  require ElixirRpg.Entity
 
   Record.defrecord(:cell_svg,
     id: nil,
