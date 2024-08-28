@@ -227,12 +227,6 @@ defmodule ElixirRpg.World do
      )}
   end
 
-  # def get_entity_for_account(%User{id: user_id}) do
-  # end
-
-  # def get_cell_for_entity(Entity.entity(id: entity_id)) do
-  # end
-
   def get_cell_id_for_name(name) do
     [[id]] = :ets.match(:world_cells, {:"$1", name, :_})
     id
