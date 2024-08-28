@@ -40,7 +40,7 @@ defmodule ElixirRpg.World do
 
   @impl true
   def init(nil) do
-    #EntitiesPool.init()
+    # EntitiesPool.init()
     RenderPool.init()
     Logger.info("World starting")
 
@@ -95,8 +95,7 @@ defmodule ElixirRpg.World do
           # S wall
           {4, {0, 10}, {10, 10}, 1, "/textures/house1/wall.png", 128, 128}
         ],
-        entities: [
-        ],
+        entities: [],
         flats: [
           # floor
           {1, [{0, 0}, {0, 10}, {10, 10}, {10, 0}], "/textures/house1/floor.png", 640, 640},
@@ -228,11 +227,11 @@ defmodule ElixirRpg.World do
      )}
   end
 
-  #def get_entity_for_account(%User{id: user_id}) do
-  #end
+  # def get_entity_for_account(%User{id: user_id}) do
+  # end
 
-  #def get_cell_for_entity(Entity.entity(id: entity_id)) do
-  #end
+  # def get_cell_for_entity(Entity.entity(id: entity_id)) do
+  # end
 
   def get_cell_id_for_name(name) do
     [[id]] = :ets.match(:world_cells, {:"$1", name, :_})
@@ -248,8 +247,8 @@ defmodule ElixirRpg.World do
 
   def get_cell_by_id!(id) do
     case :ets.lookup(:world_cells, id) do
-     [] -> nil
-     [{^id, _, Cell.cell() = c}] -> c
+      [] -> nil
+      [{^id, _, Cell.cell() = c}] -> c
     end
   end
 

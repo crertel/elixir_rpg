@@ -82,7 +82,7 @@ defmodule ElixirRpgWeb.WorldLive.Index do
         <li>viewBox="<%= @vb_x_min %> <%= @vb_y_min %> <%= @vb_width %> <%= @vb_height %>"</li>
         <li>mouse="<%= inspect(@mouse_position) %>"</li>
         <li>zoomlevel="<%= inspect(@zoom_level) %>"</li>
-        <li>cellid="<%= @cell_id%>"</li>
+        <li>cellid="<%= @cell_id %>"</li>
       </ul>
 
       <.live_component
@@ -106,10 +106,10 @@ defmodule ElixirRpgWeb.WorldLive.Index do
           style="border: 1px solid black; pointer-events: none; margin: 0px;"
         >
           <defs>
-          <%= raw(@svg_flat_defs) %>
-          <%= raw(@svg_wall_defs) %>
-          <%= raw(@svg_ent_defs) %>
-          <%= raw(@svg_portal_defs) %>
+            <%= raw(@svg_flat_defs) %>
+            <%= raw(@svg_wall_defs) %>
+            <%= raw(@svg_ent_defs) %>
+            <%= raw(@svg_portal_defs) %>
           </defs>
 
           <g transform="scale(1,-1)">

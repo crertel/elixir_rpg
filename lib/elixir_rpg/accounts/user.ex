@@ -9,7 +9,7 @@ defmodule ElixirRpg.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime_usec
-    field :faction, Ecto.Enum, values: ElixirRpg.Factions.factions
+    field :faction, Ecto.Enum, values: ElixirRpg.Factions.factions()
     field :display_name, :string
 
     timestamps(type: :utc_datetime_usec)
