@@ -3,8 +3,6 @@ defmodule ElixirRpg.Render.EntityRenderer do
 
   def render({brain, state}) do
     {defs, markup} = brain.render(state)
-    {0,
-    defs,
-    markup}
+    {0, defs, markup}
   end
 end

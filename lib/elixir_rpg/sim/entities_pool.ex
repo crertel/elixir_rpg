@@ -1,4 +1,4 @@
-#defmodule ElixirRpg.EntitiesPool do
+# defmodule ElixirRpg.EntitiesPool do
 #  @moduledoc """
 #  Wrapper around an ETS table to handle getting entities.
 #
@@ -76,5 +76,5 @@
 #      nil
 #    end
 #  end
-#end
+# end
 #

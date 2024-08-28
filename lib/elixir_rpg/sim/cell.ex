@@ -10,7 +10,7 @@ defmodule ElixirRpg.Cell do
   alias Graphmath.Vec2, as: V
   alias ElixirRpg.Render.WallRenderer
 
-  #require ElixirRpg.Entity
+  # require ElixirRpg.Entity
 
   Record.defrecord(:cell,
     id: nil,
@@ -66,7 +66,7 @@ defmodule ElixirRpg.Cell do
         # TODO message
         {new_state, _out_mesages} = brain.update(cell, state, [], dt)
 
-        :ets.insert(entity_table, {eid,{brain,new_state}})
+        :ets.insert(entity_table, {eid, {brain, new_state}})
 
         # do nothin atm
         acc
