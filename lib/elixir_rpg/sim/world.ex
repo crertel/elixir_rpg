@@ -246,6 +246,17 @@ defmodule ElixirRpg.World do
     end
   end
 
+  def get_cell_by_id!(id) do
+    case :ets.lookup(:world_cells, id) do
+     [] -> nil
+     [{^id, _, Cell.cell() = c}] -> c
+    end
+  end
+
+  def get_entity_by_id(id) do
+    :nyi
+  end
+
   def spawn_entity(cell, {x, y}, opts),
     do: GenServer.cast(__MODULE__, {:spawn_entity, cell, {x, y}, opts})
 
