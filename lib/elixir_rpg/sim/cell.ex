@@ -1,16 +1,15 @@
 defmodule ElixirRpg.Cell do
   require ElixirRpg.RenderPool
+  alias ElixirRpg.Render.WallRenderer
   alias ElixirRpg.Render.PortalRenderer
   alias ElixirRpg.Render.EntityRenderer
   alias ElixirRpg.Render.FlatRenderer
   alias ElixirRpg.RenderPool
   require Logger
+
   require Record
 
   alias Graphmath.Vec2, as: V
-  alias ElixirRpg.Render.WallRenderer
-
-  # require ElixirRpg.Entity
 
   Record.defrecord(:cell,
     id: nil,
@@ -18,27 +17,16 @@ defmodule ElixirRpg.Cell do
     bounds: nil,
     # walls, which prevent movement
     walls_table: nil,
-    walls_need_drawing: true,
     # flats, which are textured polygons on the ground
     flats_table: nil,
-    flats_need_drawing: true,
     # portals, which are textured walls that can be interact with to move an entity
     portals_table: nil,
-    portals_need_drawing: true,
     # entities, which are thinky and update
-    entity_table: nil,
-    entities_need_drawing: true
+    entity_table: nil
   )
 
-  # ef entities_topic(id), do: "cell:#{id}:entities"
-  # def chat_topic(id), do: "cell:#{id}:chat"
-  # def user_topic(id), do: "cell:#{id}:user"
-  # def cell_topic(cell(id: cell_id)), do: "cell:#{cell_id}"
-  def cell_topic(_), do: "cell"
+  def cell_topic(cell_id), do: "cell-#{cell_id}"
 
-  @spec new(any(), any()) ::
-          {:cell, atom(), any(), any(), atom() | :ets.tid(), true, atom() | :ets.tid(), true,
-           atom() | :ets.tid(), true, atom() | :ets.tid(), true}
   def new(name, bounds) do
     id = Ecto.UUID.generate()
 
@@ -75,69 +63,44 @@ defmodule ElixirRpg.Cell do
       entity_table
     )
 
+    outbound_messages = []
+
     Logger.debug("End update cell #{id}")
-    {cell(cell, entities_need_drawing: true), []}
+    {cell, outbound_messages}
   end
 
   def render(
         cell(
           id: cell_id,
           entity_table: ents,
-          entities_need_drawing: entnd,
           walls_table: walls,
-          walls_need_drawing: wnd,
           flats_table: flats,
-          flats_need_drawing: fnd,
-          portals_table: portals,
-          portals_need_drawing: pnd
-        ) = cell
+          portals_table: portals
+        ) = _cell
       ) do
-    [
-      {walls, wnd, RenderPool.cell_svg(:wall_svg), WallRenderer},
-      {flats, fnd, RenderPool.cell_svg(:flats_svg), FlatRenderer},
-      {ents, entnd, RenderPool.cell_svg(:ents_svg), EntityRenderer},
-      {portals, pnd, RenderPool.cell_svg(:portals_svg), PortalRenderer}
-    ]
-    |> Enum.map(fn {renderable_table, should_render, renderable_offset, renderer} ->
-      if should_render do
-        renderables =
-          :ets.foldl(
-            fn {_, opts}, acc ->
-              {idx, pattern, geo} =
-                renderer.render(opts)
 
-              [{idx, pattern, geo} | acc]
-            end,
-            [],
-            renderable_table
-          )
+    rendered_walls = :ets.foldl(fn {_, opts }, acc ->
+      [ WallRenderer.render(opts) | acc]
+    end,[], walls)
 
-        {pattern_markups, geo_markups} =
-          renderables
-          |> Enum.sort_by(&elem(&1, 0))
-          |> Enum.reverse()
-          |> Enum.reduce(
-            {[], []},
-            fn {_idx, pattern, geo}, {patterns, geos} ->
-              {[pattern | patterns], [geo | geos]}
-            end
-          )
+    rendered_flats = :ets.foldl(fn {_, opts}, acc ->
+      [FlatRenderer.render(opts) | acc]
+    end, [], flats)
 
-        :ets.update_element(
-          RenderPool.get_table(),
-          cell_id,
-          {renderable_offset,
-           {
-             pattern_markups |> Enum.uniq(),
-             geo_markups |> Enum.uniq()
-           }}
-        )
-      end
-    end)
-  end
+    rendered_entities = :ets.foldl(fn {_, opts}, acc ->
+      [EntityRenderer.render(opts) | acc]
+    end, [], ents)
 
-  def render(_) do
-    # Logger.warning("Unkonwn cell render on #{inspect(c)}")
+    rendered_portals = :ets.foldl(fn {_, opts}, acc ->
+      [PortalRenderer.render(opts) | acc]
+    end, [], portals)
+
+    RenderPool.set_cell_renderables(
+      cell_id,
+      rendered_flats,
+      rendered_walls,
+      rendered_entities,
+      rendered_portals)
   end
 
   def add_wall(
@@ -164,16 +127,4 @@ defmodule ElixirRpg.Cell do
   def add_portal(cell() = _cell, _portal) do
     :nyi
   end
-
-  # def pre_tick_entity(Entity.entity(id: eid) = ent, Cell.cell() = c, messages, dt) do
-  #  # TODO
-  #  intents = []
-  #  {ent, intents}
-  # end
-  #
-  # def post_tick_entity(Entity.entity(id: eid) = ent, Cell.cell() = c, dt) do
-  #  # TODO
-  #  out_messages = []
-  #  {ent, out_messages}
-  # end
 end

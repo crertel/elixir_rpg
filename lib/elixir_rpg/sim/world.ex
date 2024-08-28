@@ -175,46 +175,22 @@ defmodule ElixirRpg.World do
     now = System.monotonic_time(:millisecond)
     dt = now - last_time
 
-    # update cells
+    # core tick
     :ets.foldl(
-      fn {_cid, _cell_name, cell}, _acc ->
+      fn {cell_id, cell_name, cell}, _acc ->
         # update
         {cell2, _outbound_messages} = Cell.update(cell, dt)
 
-        # "render" if anything interesting changed
-        Cell.cell(
-          walls_need_drawing: wnd,
-          flats_need_drawing: fnd,
-          portals_need_drawing: pnd,
-          entities_need_drawing: entend,
-          id: cell2_id
-        ) = cell2
+        # persist new cell state
+        :ets.insert(cells_table, {cell_id, {cell_id, cell_name, cell2}})
 
-        if wnd or fnd or pnd or entend do
-          Cell.render(cell2)
-
-          Phoenix.PubSub.broadcast(
-            ElixirRpg.PubSub,
-            Cell.cell_topic(cell2),
-            {:cell_render_available, cell2_id}
-          )
-        end
-
-        # clear render flags
-        :ets.update_element(
-          cells_table,
-          cell2_id,
-          {3,
-           Cell.cell(
-             cell2,
-             walls_need_drawing: false,
-             flats_need_drawing: false,
-             portals_need_drawing: false,
-             entities_need_drawing: false
-           )}
+        # notify renderers
+        Cell.render(cell2)
+        Phoenix.PubSub.broadcast(
+          ElixirRpg.PubSub,
+          Cell.cell_topic(cell_id),
+          {:cell_render_available, cell_id}
         )
-
-        :ok
       end,
       :ok,
       cells_table

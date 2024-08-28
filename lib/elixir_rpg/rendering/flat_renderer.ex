@@ -1,6 +1,4 @@
 defmodule ElixirRpg.Render.FlatRenderer do
-  alias Graphmath.Vec2, as: V
-
   def render({idx, points, texture, ix, iy}) do
     svg_points =
       points
@@ -8,13 +6,6 @@ defmodule ElixirRpg.Render.FlatRenderer do
       |> Enum.join(" ")
 
     {idx,
-     """
-     <pattern id="texture-#{texture}" patternUnits="userSpaceOnUse" width="#{ix}" height="#{iy}"  patternTransform="scale(0.0078125 0.0078125)">
-       <image xlink:href="#{texture}" width="#{ix}" height="#{iy}" />
-     </pattern>
-     """,
-     """
-     <polygon points="#{svg_points}" fill="url(#texture-#{texture})" stroke="none"/>
-     """}
+     %{points: svg_points, ix: ix, iy: iy, texture: texture}}
   end
 end

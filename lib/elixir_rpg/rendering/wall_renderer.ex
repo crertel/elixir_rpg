@@ -18,14 +18,6 @@ defmodule ElixirRpg.Render.WallRenderer do
       |> Enum.map(fn {x, y} -> "#{x},#{y}" end)
       |> Enum.join(" ")
 
-    {idx,
-     """
-     <pattern id="texture-#{texture}" patternUnits="userSpaceOnUse" width="#{ix}" height="#{iy}"  patternTransform="scale(0.0078125 0.0078125)">
-       <image xlink:href="#{texture}" width="#{ix}" height="#{iy}" />
-     </pattern>
-     """,
-     """
-     <polygon points="#{points}" fill="url(#texture-#{texture})" stroke="none"/>
-     """}
+    {idx, %{points: points, ix: ix, iy: iy, texture: texture}}
   end
 end
